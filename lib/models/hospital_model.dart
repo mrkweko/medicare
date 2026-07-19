@@ -1,0 +1,1 @@
+export '../repositories/hospital_repository.dart' show HospitalModel;
