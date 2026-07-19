@@ -50,7 +50,7 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDi1fCOTjokDsZl9TRgOaQZ4_SEbx0_Hto',
+    apiKey: 'nottoday',
     appId: '1:1007436853330:android:2a7dce2df30078039aaf8b',
     messagingSenderId: '1007436853330',
     projectId: 'hospital-queue-app-86bee',
@@ -58,7 +58,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDkmozp-6GwCr_f2zqvMsK3RlWj5PBUtuk',
+    apiKey: 'nottoday',
     appId: '1:1007436853330:ios:1ec5065c562041789aaf8b',
     messagingSenderId: '1007436853330',
     projectId: 'hospital-queue-app-86bee',
