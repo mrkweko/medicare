@@ -13,6 +13,7 @@ class StaffRepository {
     String? displayName,
     String? hospitalId,
     String? departmentId,
+    String? roomNumber,
   }) async {
     try {
       final callable = _functions.httpsCallable('createStaffAccount');
@@ -23,6 +24,7 @@ class StaffRepository {
         'role': role,
         'hospitalId': hospitalId,
         'departmentId': departmentId,
+        'roomNumber': roomNumber,
       });
       return result.data['uid'] as String;
     } on FirebaseFunctionsException catch (e) {

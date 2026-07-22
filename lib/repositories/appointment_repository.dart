@@ -36,6 +36,33 @@ class AppointmentRepository {
     }
   }
 
+  Future<AppointmentModel?> fetchAppointmentById(String appointmentId) async {
+    try {
+      final doc = await _firestore.doc(FirestorePaths.appointment(appointmentId)).get();
+      return doc.exists ? AppointmentModel.fromFirestore(doc) : null;
+    } on FirebaseException catch (e) {
+      throw DataFailure(e.message ?? 'Failed to fetch appointment', code: e.code);
+    }
+  }
+
+  Future<List<({String slot, int remaining})>> getAvailableSlots({
+    required String hospitalId,
+    required String departmentId,
+    required String date,
+  }) async {
+    try {
+      final result = await _functions.httpsCallable('getAvailableSlots').call<Map<String, dynamic>>({
+        'hospitalId': hospitalId,
+        'departmentId': departmentId,
+        'date': date,
+      });
+      final slots = (result.data['slots'] as List).cast<Map<String, dynamic>>();
+      return slots.map((s) => (slot: s['slot'] as String, remaining: s['remaining'] as int)).toList();
+    } on FirebaseFunctionsException catch (e) {
+      throw DataFailure(e.message ?? 'Failed to load available slots', code: e.code);
+    }
+  }
+
   Stream<List<AppointmentModel>> watchPatientAppointments(String patientId) {
     return _firestore
         .collection(FirestorePaths.appointments)
@@ -44,6 +71,59 @@ class AppointmentRepository {
         .map((snap) {
       final appts = snap.docs.map(AppointmentModel.fromFirestore).toList();
       appts.sort((a, b) => b.scheduledDate.compareTo(a.scheduledDate)); // descending
+      return appts;
+    });
+  }
+
+  /// Client-side aggregation over today's appointments for a hospital —
+  /// small dataset (one hospital, one day), no need for a separate
+  /// server-side count query.
+  Stream<Map<String, int>> watchTodaysStatsForHospital({required String hospitalId, required String date}) {
+    return watchTodaysAppointmentsForHospital(hospitalId: hospitalId, date: date).map((appts) {
+      final counts = <String, int>{
+        'booked': 0,
+        'checked_in': 0,
+        'completed': 0,
+        'skipped': 0,
+      };
+      for (final a in appts) {
+        counts[a.status] = (counts[a.status] ?? 0) + 1;
+      }
+      return counts;
+    });
+  }
+
+  /// Everything this doctor has ever been assigned to — across all dates,
+  /// not just today. No orderBy (avoids a composite-index requirement,
+  /// same lesson as elsewhere in this app); sorted client-side.
+  Stream<List<AppointmentModel>> watchDoctorAppointmentHistory({
+    required String doctorId,
+    required String hospitalId,
+  }) {
+    return _firestore
+        .collection(FirestorePaths.appointments)
+        .where('doctorId', isEqualTo: doctorId)
+        .where('hospitalId', isEqualTo: hospitalId)
+        .snapshots()
+        .map((snap) {
+      final appts = snap.docs.map(AppointmentModel.fromFirestore).toList();
+      appts.sort((a, b) => b.scheduledDate.compareTo(a.scheduledDate));
+      return appts;
+    });
+  }
+
+  Stream<List<AppointmentModel>> watchAppointmentsBookedBy({
+    required String uid,
+    required String hospitalId,
+  }) {
+    return _firestore
+        .collection(FirestorePaths.appointments)
+        .where('bookedBy', isEqualTo: uid)
+        .where('hospitalId', isEqualTo: hospitalId)
+        .snapshots()
+        .map((snap) {
+      final appts = snap.docs.map(AppointmentModel.fromFirestore).toList();
+      appts.sort((a, b) => b.scheduledDate.compareTo(a.scheduledDate));
       return appts;
     });
   }

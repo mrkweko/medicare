@@ -42,6 +42,8 @@ class WalkInBookingHelper {
     );
 
     await _queueRepository.checkIn(
+      patientName: displayName,
+      patientPhoneNumber: phoneNumber,
       appointmentId: appointmentResult.appointmentId,
       patientId: patientId,
       tokenNumber: appointmentResult.tokenNumber,

@@ -42,7 +42,7 @@ enum AppRole {
 
 class UserModel {
   final String uid;
-  final String email;
+  final String? email; // null for walk-in patients created without one (createWalkInPatient)
   final String? displayName;
   final String? phoneNumber;
   final AppRole role;
@@ -51,7 +51,7 @@ class UserModel {
 
   const UserModel({
     required this.uid,
-    required this.email,
+    this.email,
     this.displayName,
     this.phoneNumber,
     required this.role,
@@ -66,7 +66,7 @@ class UserModel {
     }
     return UserModel(
       uid: doc.id,
-      email: data['email'] as String,
+      email: data['email'] as String?,
       displayName: data['displayName'] as String?,
       phoneNumber: data['phoneNumber'] as String?,
       role: AppRole.fromString(data['role'] as String),

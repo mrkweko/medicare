@@ -1,5 +1,5 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
-const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const { getFirestore, FieldValue, Timestamp } = require('firebase-admin/firestore');
 const logger = require('firebase-functions/logger');
 
 exports.callNextPatient = onCall(async (request) => {
@@ -28,21 +28,38 @@ exports.callNextPatient = onCall(async (request) => {
     .doc(departmentId)
     .collection('entries');
 
-  // A doctor may only have ONE active patient (called or in_consultation)
-  // at a time. Checked outside the transaction first as a cheap early
-  // reject, and would also be safe to check again inside if this were
-  // ever called concurrently by the same doctor from two devices — not
-  // bothering with that edge case given the time constraints.
+  // Backstop for the grace-period feature: if this doctor's currently
+  // "called" patient has a graceDeadline that's already passed (client-side
+  // countdown should normally have already auto-skipped them, but this
+  // covers the case where nobody was looking — app closed, etc.), skip
+  // them now before proceeding, so the doctor isn't permanently blocked.
   const activeSnap = await entriesRef
     .where('doctorId', '==', caller.uid)
     .where('status', 'in', ['called', 'in_consultation'])
     .limit(1)
     .get();
+
   if (!activeSnap.empty) {
-    throw new HttpsError(
-      'failed-precondition',
-      'You already have an active patient. Complete or the current consultation before calling the next one.'
-    );
+    const activeDoc = activeSnap.docs[0];
+    const activeData = activeDoc.data();
+    const isOverdue =
+      activeData.status === 'called' &&
+      activeData.graceDeadline &&
+      activeData.graceDeadline.toMillis() < Date.now();
+
+    if (isOverdue) {
+      await activeDoc.ref.update({
+        status: 'skipped',
+        doctorId: '',
+        skippedAt: FieldValue.serverTimestamp(),
+      });
+      logger.info(`callNextPatient: auto-skipped overdue entry ${activeDoc.id} for doctor ${caller.uid} (backstop)`);
+    } else {
+      throw new HttpsError(
+        'failed-precondition',
+        'You already have an active patient. Complete or the current consultation before calling the next one.'
+      );
+    }
   }
 
   try {
@@ -78,7 +95,14 @@ exports.callNextPatient = onCall(async (request) => {
         doctorId: caller.uid,
         status: 'called',
         calledAt: FieldValue.serverTimestamp(),
+        warnedAt: null,
+        graceDeadline: null,
       });
+
+      const appointmentId = fresh.data().appointmentId;
+      if (appointmentId) {
+        tx.update(db.collection('appointments').doc(appointmentId), { doctorId: caller.uid });
+      }
 
       return { entryId: targetDoc.id, ...fresh.data() };
     });

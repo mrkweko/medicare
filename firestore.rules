@@ -87,11 +87,11 @@ service cloud.firestore {
     // entirely, so client write access here was pure unused surface.
     // -----------------------------------------------------------------
     match /doctors/{doctorId} {
-         allow read: if isSignedIn();
-         allow create, delete: if false;
-         allow update: if isSuperAdmin() ||
+          allow read: if isSignedIn();
+          allow create, delete: if false;
+          allow update: if isSuperAdmin() ||
             (isHospitalAdmin() && myHospitalId() == resource.data.hospitalId &&
-            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['departmentId']));
+             request.resource.data.diff(resource.data).affectedKeys().hasOnly(['departmentId', 'roomNumber']));
         }
 
     // -----------------------------------------------------------------
@@ -103,16 +103,15 @@ service cloud.firestore {
     // direct client update of status → 'checked_in'.
     // -----------------------------------------------------------------
     match /appointments/{appointmentId} {
-      allow read: if isSignedIn() && (
-        (isPatient() && request.auth.uid == resource.data.patientId) ||
-        isStaffOf(resource.data.hospitalId) ||
-        isSuperAdmin()
-      );
-      allow create: if false;
-      allow update: if isStaffOf(resource.data.hospitalId) || isSuperAdmin();
-      allow delete: if isSuperAdmin();
-    }
-
+          allow read: if isSignedIn() && (
+            (isPatient() && request.auth.uid == resource.data.get('patientId', null)) ||
+            isStaffOf(resource.data.get('hospitalId', null)) ||
+            isSuperAdmin()
+          );
+          allow create: if false;
+          allow update: if isStaffOf(resource.data.hospitalId) || isSuperAdmin();
+          allow delete: if isSuperAdmin();
+        }
     // -----------------------------------------------------------------
     // queue_entries — 'create' TIGHTENED to receptionist/doctor only
     // (hospital_admin has no legitimate check-in action in the built
@@ -125,19 +124,27 @@ service cloud.firestore {
     // directly, bypassing the doctor-only intent of the app's own UI.
     // -----------------------------------------------------------------
     match /queue_entries/{hospitalId}/{date}/{departmentId}/entries/{entryId} {
-      allow read: if isSignedIn() && (
-        (isPatient() && request.auth.uid == resource.data.patientId) ||
-        isStaffOf(hospitalId) ||
-        isSuperAdmin()
-      );
-      allow create: if isSuperAdmin() ||
-        ((isReceptionist() || isDoctor()) && myHospitalId() == hospitalId);
-      allow update: if isSuperAdmin() ||
-        (isDoctor() && myHospitalId() == hospitalId) ||
-        (isReceptionist() && myHospitalId() == hospitalId &&
-         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['priority', 'priorityRank']));
-      allow delete: if isSuperAdmin();
-    }
+          allow read: if isSignedIn() && (
+            (isPatient() && request.auth.uid == resource.data.get('patientId', null)) ||
+            isStaffOf(hospitalId) ||
+            isSuperAdmin()
+          );
+          allow create: if isSuperAdmin() ||
+            ((isReceptionist() || isDoctor()) && myHospitalId() == hospitalId);
+          allow update: if isSuperAdmin() ||
+            (isDoctor() && myHospitalId() == hospitalId) ||
+            (isReceptionist() && myHospitalId() == hospitalId && (
+              // Escalate priority on a normal-priority patient.
+              request.resource.data.diff(resource.data).affectedKeys().hasOnly(['priority', 'priorityRank']) ||
+              // Rejoin a skipped patient — the ONLY status transition a
+              // receptionist may perform directly; anything else touching
+              // status remains doctor-only.
+              (resource.data.status == 'skipped' &&
+               request.resource.data.status == 'waiting' &&
+               request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'checkedInAt', 'lastNotifiedThreshold']))
+            ));
+          allow delete: if isSuperAdmin();
+        }
 
     // -----------------------------------------------------------------
     // counters — TIGHTENED to fully server-only. Every counter increment

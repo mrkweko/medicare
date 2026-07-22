@@ -20,3 +20,5 @@ exports.onQueueEntryWritten = require('./src/queueNotifications').onQueueEntryWr
 exports.onConsultationCompleted = require('./src/consultationAverages').onConsultationCompleted;
 exports.createReferral = require('./src/createReferral').createReferral;
 exports.createFollowUpAppointment = require('./src/createFollowUpAppointment').createFollowUpAppointment;
+exports.getAvailableSlots = require('./src/getAvailableSlots').getAvailableSlots;
+exports.warnPatientDelay = require('./src/warnPatientDelay').warnPatientDelay;

@@ -51,20 +51,23 @@ exports.createFollowUpAppointment = onCall(async (request) => {
       );
 
       tx.set(followUpRef, {
-        patientId: origin.patientId,
-        hospitalId: origin.hospitalId,
-        departmentId: origin.departmentId,
-        doctorId: origin.doctorId, // continuity — direct copy, no re-resolution. See decision #2.
-        scheduledDate,
-        scheduledTimeSlot: null,
-        tokenNumber: nextToken,
-        status: 'booked',
-        visitId: null,
-        isRecurring: true,
-        recurringParentId: originAppointmentId,
-        bookedBy: caller.uid,
-        createdAt: FieldValue.serverTimestamp(),
-      });
+              patientId: origin.patientId,
+              patientName: origin.patientName,
+              patientPhoneNumber: origin.patientPhoneNumber,
+              hospitalId: origin.hospitalId,
+              departmentId: origin.departmentId,
+              doctorId: origin.doctorId,
+              scheduledDate,
+              scheduledTimeSlot: null,
+              tokenNumber: nextToken,
+              status: 'booked',
+              visitId: null,
+              isRecurring: true,
+              recurringParentId: originAppointmentId,
+              bookedBy: caller.uid,
+              source: 'follow_up',
+              createdAt: FieldValue.serverTimestamp(),
+            });
 
       return nextToken;
     });

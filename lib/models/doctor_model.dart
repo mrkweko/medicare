@@ -5,6 +5,7 @@ class DoctorModel {
   final String displayName;
   final String hospitalId;
   final String departmentId;
+  final String? roomNumber;
   final int avgConsultationMinutes;
 
   const DoctorModel({
@@ -12,6 +13,7 @@ class DoctorModel {
     required this.displayName,
     required this.hospitalId,
     required this.departmentId,
+    this.roomNumber,
     required this.avgConsultationMinutes,
   });
 
@@ -22,6 +24,7 @@ class DoctorModel {
       displayName: d['displayName'] ?? 'Unnamed',
       hospitalId: d['hospitalId'],
       departmentId: d['departmentId'],
+      roomNumber: d['roomNumber'],
       avgConsultationMinutes: d['avgConsultationMinutes'] ?? 15,
     );
   }

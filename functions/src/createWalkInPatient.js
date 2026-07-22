@@ -3,11 +3,6 @@ const { getAuth } = require('firebase-admin/auth');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const logger = require('firebase-functions/logger');
 
-// SRS 2.3: receptionist creates a patient record for someone without a
-// smartphone. They get a real Auth account (so patientId/uid works
-// identically everywhere else in the data model) but likely never log in —
-// no password is set, email is optional. createUser() with neither is
-// valid via the Admin SDK, unlike the client SDK.
 exports.createWalkInPatient = onCall(async (request) => {
   const caller = request.auth;
   if (!caller || caller.token.role !== 'receptionist') {
@@ -46,7 +41,7 @@ exports.createWalkInPatient = onCall(async (request) => {
       displayName,
       role: 'patient',
       hospitalId: null,
-      hasNoLoginCredentials: !email, // flag so UI can distinguish walk-in-only patients later
+      hasNoLoginCredentials: !email,
       createdAt: FieldValue.serverTimestamp(),
       createdBy: caller.uid,
     });
@@ -55,6 +50,24 @@ exports.createWalkInPatient = onCall(async (request) => {
     await auth.deleteUser(userRecord.uid).catch((e) => logger.error('rollback failed', e));
     throw new HttpsError('internal', 'Patient setup failed; record was not created.');
   }
+
+  // Every walk-in creation notifies the creating receptionist — content
+  // differs based on whether a phone number was captured, but a
+  // notification fires either way now, not just the no-phone case.
+  const message = phoneNumber
+    ? `${displayName} was added successfully. SMS updates will be sent to ${phoneNumber}.`
+    : `${displayName} was added without a phone number — no SMS updates will be sent for their visit.`;
+
+  await db.collection('notifications').add({
+    userId: caller.uid,
+    type: phoneNumber ? 'walkin_created' : 'walkin_no_phone',
+    message,
+    hospitalId: caller.token.hospitalId ?? null,
+    appointmentId: null,
+    queueEntryId: null,
+    read: false,
+    createdAt: FieldValue.serverTimestamp(),
+  });
 
   return { uid: userRecord.uid };
 });

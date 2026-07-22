@@ -20,15 +20,16 @@ class BookingController extends AsyncNotifier<void> {
     required String hospitalId,
     required String departmentId,
     required String scheduledDate,
+    String? scheduledTimeSlot,
   }) async {
     state = const AsyncLoading();
     try {
-      await ref.read(authRepositoryProvider).ensureFreshToken();
       final result = await ref.read(appointmentRepositoryProvider).createAppointment(
         patientId: patientId,
         hospitalId: hospitalId,
         departmentId: departmentId,
         scheduledDate: scheduledDate,
+        scheduledTimeSlot: scheduledTimeSlot,
       );
       state = const AsyncData(null);
       return result;

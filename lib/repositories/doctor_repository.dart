@@ -16,8 +16,6 @@ class DoctorRepository {
         .map((snap) => snap.docs.map(DoctorModel.fromFirestore).toList());
   }
 
-  /// All doctors in a hospital, regardless of department — for the
-  /// hospital_admin's reassignment screen.
   Stream<List<DoctorModel>> watchAllDoctorsForHospital(String hospitalId) {
     return _firestore
         .collection('doctors')
@@ -37,6 +35,14 @@ class DoctorRepository {
       await _firestore.collection('doctors').doc(doctorId).update({'departmentId': newDepartmentId});
     } on FirebaseException catch (e) {
       throw DataFailure(e.message ?? 'Failed to reassign department', code: e.code);
+    }
+  }
+
+  Future<void> updateRoomNumber({required String doctorId, required String roomNumber}) async {
+    try {
+      await _firestore.collection('doctors').doc(doctorId).update({'roomNumber': roomNumber});
+    } on FirebaseException catch (e) {
+      throw DataFailure(e.message ?? 'Failed to update room number', code: e.code);
     }
   }
 }

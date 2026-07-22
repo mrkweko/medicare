@@ -14,7 +14,7 @@ exports.createStaffAccount = onCall(async (request) => {
   const callerRole = callerAuth.token.role;
   const callerHospitalId = callerAuth.token.hospitalId ?? null;
 
-  const { email, password, displayName, role, hospitalId, departmentId, avgConsultationMinutes } = request.data ?? {};
+  const { email, password, displayName, role, hospitalId, departmentId, avgConsultationMinutes, roomNumber } = request.data ?? {};
 
   if (!email || !password || !role) {
     throw new HttpsError('invalid-argument', 'email, password, and role are required.');
@@ -94,6 +94,7 @@ exports.createStaffAccount = onCall(async (request) => {
         displayName: displayName || null,
         hospitalId: targetHospitalId,
         departmentId,
+        roomNumber: roomNumber || null,
         avgConsultationMinutes: avgConsultationMinutes ?? 15, // SRS 7 fallback default until real history exists
         createdAt: FieldValue.serverTimestamp(),
       });

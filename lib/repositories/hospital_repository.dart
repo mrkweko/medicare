@@ -8,7 +8,8 @@ class HospitalModel {
   final String name;
   final String address;
   final String? contactInfo;
-  final String skipPolicy; // 'end_of_queue' | 'after_current'
+  final String skipPolicy;
+  final int noShowGraceMinutes;
 
   const HospitalModel({
     required this.id,
@@ -16,6 +17,7 @@ class HospitalModel {
     required this.address,
     this.contactInfo,
     this.skipPolicy = 'end_of_queue',
+    this.noShowGraceMinutes = 5,
   });
 
   factory HospitalModel.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -26,6 +28,7 @@ class HospitalModel {
       address: data['address'] as String,
       contactInfo: data['contactInfo'] as String?,
       skipPolicy: data['skipPolicy'] as String? ?? 'end_of_queue',
+      noShowGraceMinutes: (data['noShowGraceMinutes'] as num?)?.toInt() ?? 5,
     );
   }
 
@@ -34,21 +37,16 @@ class HospitalModel {
     'address': address,
     'contactInfo': contactInfo,
     'skipPolicy': skipPolicy,
+    'noShowGraceMinutes': noShowGraceMinutes,
     'createdAt': FieldValue.serverTimestamp(),
   };
 }
 
 class HospitalRepository {
-  HospitalRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
-
+  HospitalRepository({FirebaseFirestore? firestore}) : _firestore = firestore ?? FirebaseFirestore.instance;
   final FirebaseFirestore _firestore;
 
-  Future<String> createHospital({
-    required String name,
-    required String address,
-    String? contactInfo,
-  }) async {
+  Future<String> createHospital({required String name, required String address, String? contactInfo}) async {
     try {
       final docRef = _firestore.collection(FirestorePaths.hospitals).doc();
       final hospital = HospitalModel(id: docRef.id, name: name, address: address, contactInfo: contactInfo);
@@ -60,11 +58,9 @@ class HospitalRepository {
   }
 
   Stream<List<HospitalModel>> watchHospitals() {
-    return _firestore
-        .collection(FirestorePaths.hospitals)
-        .orderBy('name')
-        .snapshots()
-        .map((snap) => snap.docs.map(HospitalModel.fromFirestore).toList());
+    return _firestore.collection(FirestorePaths.hospitals).orderBy('name').snapshots().map(
+          (snap) => snap.docs.map(HospitalModel.fromFirestore).toList(),
+    );
   }
 
   Stream<HospitalModel?> watchHospital(String hospitalId) {
@@ -78,6 +74,14 @@ class HospitalRepository {
       await _firestore.doc(FirestorePaths.hospital(hospitalId)).update({'skipPolicy': skipPolicy});
     } on FirebaseException catch (e) {
       throw DataFailure(e.message ?? 'Failed to update skip policy', code: e.code);
+    }
+  }
+
+  Future<void> updateNoShowGraceMinutes({required String hospitalId, required int minutes}) async {
+    try {
+      await _firestore.doc(FirestorePaths.hospital(hospitalId)).update({'noShowGraceMinutes': minutes});
+    } on FirebaseException catch (e) {
+      throw DataFailure(e.message ?? 'Failed to update grace period', code: e.code);
     }
   }
 }

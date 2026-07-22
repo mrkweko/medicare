@@ -64,20 +64,23 @@ exports.createReferral = onCall(async (request) => {
       );
 
       tx.set(targetAppointmentRef, {
-        patientId: origin.patientId,
-        hospitalId: origin.hospitalId,
-        departmentId: targetDepartmentId,
-        doctorId: null,
-        scheduledDate: today,
-        scheduledTimeSlot: null,
-        tokenNumber: nextToken,
-        status: 'checked_in', // referrals skip 'booked' — they're immediately live, see decision #1
-        visitId,
-        isRecurring: false,
-        recurringParentId: null,
-        bookedBy: caller.uid,
-        createdAt: FieldValue.serverTimestamp(),
-      });
+              patientId: origin.patientId,
+              patientName: origin.patientName,
+              patientPhoneNumber: origin.patientPhoneNumber,
+              hospitalId: origin.hospitalId,
+              departmentId: targetDepartmentId,
+              doctorId: null,
+              scheduledDate: today,
+              scheduledTimeSlot: null,
+              tokenNumber: nextToken,
+              status: 'checked_in',
+              visitId,
+              isRecurring: false,
+              recurringParentId: null,
+              bookedBy: caller.uid,
+              source: 'referral',
+              createdAt: FieldValue.serverTimestamp(),
+            });
 
       return nextToken;
     });
