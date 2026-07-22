@@ -177,7 +177,7 @@ class _DateTimeConfirmScreenState extends ConsumerState<DateTimeConfirmScreen> {
                 // Fetch the real, server-populated appointment back
                 // rather than hand-constructing one — this is what
                 // guarantees patientName/patientPhoneNumber shown on
-                // the QR screen match what's actually in Firestore.
+                // the QR screen match what's actually in the database.
                 final appointment = await ref.read(appointmentRepositoryProvider).fetchAppointmentById(result.appointmentId);
 
                 if (!mounted) return;

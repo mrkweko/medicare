@@ -56,7 +56,7 @@ String _homePathForRole(AppRole role) => '${_basePathForRole(role)}/home';
 
 /// Gates the splash screen so it's shown for a minimum duration even if
 /// auth/profile resolution completes almost instantly (e.g. cached
-/// Firebase auth state on a warm start). See splash_gate.dart.
+/// Supabase session on a warm start). See splash_gate.dart.
 final splashGateProvider = ChangeNotifierProvider<SplashGate>((ref) {
   return SplashGate();
 });
