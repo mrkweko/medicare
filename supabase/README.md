@@ -28,6 +28,11 @@
 #      NULL
 #    );
 #
+# Step 5 — appointments schema + RPCs
+# ------------------------------------
+# Run supabase/migrations/20260722160000_appointments.sql in SQL Editor.
+# No Edge Function deploy needed for this step (Postgres RPCs only).
+
 # Step 4 — doctors table + create-staff-account Edge Function
 # -----------------------------------------------------------
 # 1. Run supabase/migrations/20260722150000_doctors.sql in SQL Editor.

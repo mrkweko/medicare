@@ -4,7 +4,6 @@ import '../../repositories/appointment_repository.dart';
 import '../../repositories/department_repository.dart';
 import '../../repositories/doctor_repository.dart';
 import '../../repositories/hospital_repository.dart';
-import '../auth/auth_viewmodel.dart';
 
 final bookingHospitalRepoProvider = Provider((ref) => HospitalRepository());
 final bookingDepartmentRepoProvider = Provider((ref) => DepartmentRepository());
