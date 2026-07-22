@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 enum AppRole {
   superAdmin,
   hospitalAdmin,
@@ -38,9 +36,6 @@ enum AppRole {
         return 'patient';
     }
   }
-
-  /// Legacy Firestore serializer — kept until remaining Firebase repos migrate.
-  String toFirestoreString() => toDbString();
 }
 
 class UserModel {
@@ -85,36 +80,6 @@ class UserModel {
       'phone_number': phoneNumber,
       'role': role.toDbString(),
       'hospital_id': hospitalId,
-    };
-  }
-
-  /// Legacy Firestore parser — kept until SuperAdminRepository migrates.
-  factory UserModel.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final data = doc.data();
-    if (data == null) {
-      throw StateError('UserModel.fromFirestore: doc ${doc.id} has no data');
-    }
-    return UserModel(
-      uid: doc.id,
-      email: data['email'] as String?,
-      displayName: data['displayName'] as String?,
-      phoneNumber: data['phoneNumber'] as String?,
-      role: AppRole.fromString(data['role'] as String),
-      hospitalId: data['hospitalId'] as String?,
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
-    );
-  }
-
-  /// Legacy Firestore writer — kept until remaining Firebase repos migrate.
-  Map<String, dynamic> toMap() {
-    return {
-      'uid': uid,
-      'email': email,
-      'displayName': displayName,
-      'phoneNumber': phoneNumber,
-      'role': role.toFirestoreString(),
-      'hospitalId': hospitalId,
-      'createdAt': FieldValue.serverTimestamp(),
     };
   }
 

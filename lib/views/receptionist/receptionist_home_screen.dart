@@ -7,7 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../models/notification_model.dart';
 import '../../viewmodels/auth/auth_viewmodel.dart';
 import '../../viewmodels/patient/booking_viewmodel.dart';
-import '../patient/notifications_screen.dart'; // notificationRepositoryProviderimport '../patient/notifications_screen.dart'; // notificationRepositoryProvider
+import '../patient/notifications_screen.dart'; // notificationRepositoryProvider
 
 class ReceptionistHomeScreen extends ConsumerWidget {
   const ReceptionistHomeScreen({super.key});

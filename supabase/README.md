@@ -28,6 +28,14 @@
 #      NULL
 #    );
 #
+# Step 8 — notifications + remaining Realtime streams
+# ----------------------------------------------------
+# Run supabase/migrations/20260722180000_notifications.sql in SQL Editor.
+#
+# Optional smoke-test insert (as yourself, replace UUIDs):
+#   INSERT INTO notifications (user_id, type, message)
+#   VALUES ('<your-auth-uid>', 'info', 'Hello from Supabase');
+
 # Step 6 — queue_entries + core queue RPCs
 # ----------------------------------------
 # Run supabase/migrations/20260722170000_queue_entries.sql in SQL Editor.
