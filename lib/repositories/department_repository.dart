@@ -1,13 +1,13 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../core/constants/firestore_paths.dart';
 import '../core/errors/failures.dart';
-import '../models/appointment_model.dart';
-import '../models/department_model.dart' hide AppointmentModel;
+import '../core/supabase/supabase_init.dart';
+import '../models/department_model.dart';
 
 class DepartmentRepository {
-  DepartmentRepository({FirebaseFirestore? firestore}) : _firestore = firestore ?? FirebaseFirestore.instance;
-  final FirebaseFirestore _firestore;
+  DepartmentRepository({SupabaseClient? client}) : _client = client ?? supabase;
+
+  final SupabaseClient _client;
 
   Future<void> createDepartment({
     required String hospitalId,
@@ -18,76 +18,47 @@ class DepartmentRepository {
     int slotCapacity = 5,
   }) async {
     try {
-      await _firestore.collection(FirestorePaths.departments).add(
-        DepartmentModel(
-          id: '',
-          hospitalId: hospitalId,
-          name: name,
-          openTime: openTime,
-          closeTime: closeTime,
-          slotDurationMinutes: slotDurationMinutes,
-          slotCapacity: slotCapacity,
-        ).toMap(),
-      );
-    } on FirebaseException catch (e) {
-      throw DataFailure(e.message ?? 'Failed to create department', code: e.code);
+      await _client.from('departments').insert(
+            DepartmentModel(
+              id: '',
+              hospitalId: hospitalId,
+              name: name,
+              openTime: openTime,
+              closeTime: closeTime,
+              slotDurationMinutes: slotDurationMinutes,
+              slotCapacity: slotCapacity,
+            ).toInsert(),
+          );
+    } on PostgrestException catch (e) {
+      throw DataFailure(e.message, code: e.code);
     }
   }
 
   Stream<List<DepartmentModel>> watchDepartments(String hospitalId) {
-    return _firestore
-        .collection(FirestorePaths.departments)
-        .where('hospitalId', isEqualTo: hospitalId)
-        .snapshots()
-        .map((snap) => snap.docs.map(DepartmentModel.fromFirestore).toList());
+    return _client
+        .from('departments')
+        .stream(primaryKey: ['id'])
+        .eq('hospital_id', hospitalId)
+        .map((rows) => rows.map(DepartmentModel.fromSupabase).toList());
   }
 
-
-
-  /// Available slots for a given department/date, with remaining capacity
-  /// per slot. Counts existing 'booked'+'checked_in' appointments matching
-  /// each slot label — small dataset (one department, one day), so client-
-  /// side counting is fine, same reasoning as other per-day aggregations
-  /// in this app.
-  Stream<List<({String slot, int remaining})>> watchAvailableSlots({
-    required DepartmentModel department,
-    required String date,
-  }) {
-    return _firestore
-        .collection(FirestorePaths.appointments)
-        .where('hospitalId', isEqualTo: department.hospitalId)
-        .where('departmentId', isEqualTo: department.id)
-        .where('scheduledDate', isEqualTo: date)
-        .snapshots()
-        .map((snap) {
-      final appts = snap.docs.map(AppointmentModel.fromFirestore).toList();
-      final countsBySlot = <String, int>{};
-      for (final a in appts) {
-        if (a.scheduledTimeSlot == null) continue;
-        if (a.status == 'booked' || a.status == 'checked_in') {
-          countsBySlot[a.scheduledTimeSlot!] = (countsBySlot[a.scheduledTimeSlot!] ?? 0) + 1;
-        }
-      }
-      return department.generateSlots().map((slot) {
-        final taken = countsBySlot[slot] ?? 0;
-        return (slot: slot, remaining: department.slotCapacity - taken);
-      }).toList();
-    });
+  /// Unscoped list — for super_admin dashboards only. RLS still applies;
+  /// non–super-admin callers only see rows their policies allow (typically
+  /// none for a full unscoped read of other hospitals' departments).
+  Stream<List<DepartmentModel>> watchAllDepartments() {
+    return _client
+        .from('departments')
+        .stream(primaryKey: ['id'])
+        .map((rows) => rows.map(DepartmentModel.fromSupabase).toList());
   }
 
   /// Resolves a department name from an id given a list already fetched
-  /// elsewhere (e.g. from watchDepartments) — avoids every screen writing
-  /// its own `.firstWhere(...)` / `?? id` fallback boilerplate, and keeps
-  /// the "what do we show if it's missing" decision in one place.
+  /// elsewhere (e.g. from watchDepartments).
   String departmentNameFromList(List<DepartmentModel> departments, String departmentId) {
     final match = departments.where((d) => d.id == departmentId);
     return match.isEmpty ? departmentId : match.first.name;
   }
 
-  /// Same, but keyed as a Map for O(1) repeated lookups — the pattern
-  /// already used ad hoc in checkin_screen.dart, doctor_history_screen.dart,
-  /// etc. (`{for (final d in departments) d.id: d.name}`), now centralized
-  /// so future screens don't reinvent it slightly differently each time.
   Map<String, String> departmentNameMap(List<DepartmentModel> departments) {
     return {for (final d in departments) d.id: d.name};
   }

@@ -28,6 +28,23 @@
 #      NULL
 #    );
 #
+# Step 4 — doctors table + create-staff-account Edge Function
+# -----------------------------------------------------------
+# 1. Run supabase/migrations/20260722150000_doctors.sql in SQL Editor.
+# 2. Deploy the Edge Function (from repo root, with CLI logged in):
+#
+#    npx supabase login
+#    npx supabase link --project-ref <YOUR_PROJECT_REF>
+#    npx supabase functions deploy create-staff-account
+#
+# Project ref is the subdomain of SUPABASE_URL
+# (https://<ref>.supabase.co).
+
+# Step 3 — hospitals + departments Realtime
+# -----------------------------------------
+# Run supabase/migrations/20260722140000_hospitals_departments_realtime.sql
+# in the SQL Editor (after Step 1 + Step 2 migrations).
+
 # Step 2 — profiles Realtime (required for live profile stream)
 # ------------------------------------------------------------
 # Run supabase/migrations/20260722130000_profiles_realtime.sql in SQL Editor.

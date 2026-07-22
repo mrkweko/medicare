@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class DepartmentModel {
   final String id;
   final String hospitalId;
@@ -19,28 +17,26 @@ class DepartmentModel {
     this.slotCapacity = 5,
   });
 
-  factory DepartmentModel.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final d = doc.data()!;
+  factory DepartmentModel.fromSupabase(Map<String, dynamic> data) {
     return DepartmentModel(
-      id: doc.id,
-      hospitalId: d['hospitalId'],
-      name: d['name'],
-      openTime: d['openTime'] ?? '08:00',
-      closeTime: d['closeTime'] ?? '17:00',
-      slotDurationMinutes: (d['slotDurationMinutes'] as num?)?.toInt() ?? 30,
-      slotCapacity: (d['slotCapacity'] as num?)?.toInt() ?? 5,
+      id: data['id'] as String,
+      hospitalId: data['hospital_id'] as String,
+      name: data['name'] as String,
+      openTime: _normalizeTime(data['open_time'] as String? ?? '08:00'),
+      closeTime: _normalizeTime(data['close_time'] as String? ?? '17:00'),
+      slotDurationMinutes: (data['slot_duration_minutes'] as num?)?.toInt() ?? 30,
+      slotCapacity: (data['slot_capacity'] as num?)?.toInt() ?? 5,
     );
   }
 
-  Map<String, dynamic> toMap() => {
-    'hospitalId': hospitalId,
-    'name': name,
-    'openTime': openTime,
-    'closeTime': closeTime,
-    'slotDurationMinutes': slotDurationMinutes,
-    'slotCapacity': slotCapacity,
-    'createdAt': FieldValue.serverTimestamp(),
-  };
+  Map<String, dynamic> toInsert() => {
+        'hospital_id': hospitalId,
+        'name': name,
+        'open_time': openTime,
+        'close_time': closeTime,
+        'slot_duration_minutes': slotDurationMinutes,
+        'slot_capacity': slotCapacity,
+      };
 
   /// Generates the list of slot labels for a day, e.g. '08:00-08:30'.
   List<String> generateSlots() {
@@ -55,6 +51,15 @@ class DepartmentModel {
       current += slotDurationMinutes;
     }
     return slots;
+  }
+
+  /// Postgres `time` may return `HH:mm:ss` — slot UI expects `HH:mm`.
+  static String _normalizeTime(String t) {
+    final parts = t.split(':');
+    if (parts.length < 2) return t;
+    final h = parts[0].padLeft(2, '0');
+    final m = parts[1].padLeft(2, '0');
+    return '$h:$m';
   }
 
   static int _parseTime(String t) {

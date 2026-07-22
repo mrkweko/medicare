@@ -4,15 +4,24 @@ import '../models/appointment_model.dart';
 import '../models/department_model.dart';
 import '../models/doctor_model.dart';
 import '../models/user_model.dart';
+import 'department_repository.dart';
+import 'doctor_repository.dart';
 
 /// Platform-wide, unscoped queries — only safe to call as super_admin.
-/// isSuperAdmin() in firestore.rules is provable without depending on any
-/// document field, which is what allows these list queries to pass at
-/// all; every other role's equivalent queries must be scoped (e.g. by
-/// hospitalId) or Firestore rejects the whole list request outright.
+/// Departments + doctors are on Supabase; users/appointments remain on
+/// Firestore until their migration steps.
 class SuperAdminRepository {
-  SuperAdminRepository({FirebaseFirestore? firestore}) : _firestore = firestore ?? FirebaseFirestore.instance;
+  SuperAdminRepository({
+    FirebaseFirestore? firestore,
+    DepartmentRepository? departmentRepository,
+    DoctorRepository? doctorRepository,
+  })  : _firestore = firestore ?? FirebaseFirestore.instance,
+        _departmentRepository = departmentRepository ?? DepartmentRepository(),
+        _doctorRepository = doctorRepository ?? DoctorRepository();
+
   final FirebaseFirestore _firestore;
+  final DepartmentRepository _departmentRepository;
+  final DoctorRepository _doctorRepository;
 
   Stream<List<UserModel>> watchAllUsers() {
     return _firestore.collection('users').snapshots().map(
@@ -21,15 +30,11 @@ class SuperAdminRepository {
   }
 
   Stream<List<DepartmentModel>> watchAllDepartments() {
-    return _firestore.collection('departments').snapshots().map(
-          (snap) => snap.docs.map(DepartmentModel.fromFirestore).toList(),
-    );
+    return _departmentRepository.watchAllDepartments();
   }
 
   Stream<List<DoctorModel>> watchAllDoctors() {
-    return _firestore.collection('doctors').snapshots().map(
-          (snap) => snap.docs.map(DoctorModel.fromFirestore).toList(),
-    );
+    return _doctorRepository.watchAllDoctors();
   }
 
   Stream<List<AppointmentModel>> watchAllAppointmentsForDate(String date) {
