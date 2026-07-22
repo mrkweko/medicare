@@ -28,6 +28,18 @@
 #      NULL
 #    );
 #
+# Step 9 — notifications dispatcher, walk-in, referral/follow-up, sms_log
+# ----------------------------------------------------------------------
+# 1. Run supabase/migrations/20260722190000_step9_notifications_walkin_referrals.sql
+# 2. Deploy Edge Function:
+#      npx supabase functions deploy create-walk-in-patient
+#    (also keep create-staff-account deployed from Step 4)
+#
+# Firebase Flutter packages are removed after this step.
+# Optional Android cleanup (Step 11 leftovers):
+#   - remove google-services plugin from android/*.gradle.kts
+#   - delete android/app/google-services.json
+
 # Step 8 — notifications + remaining Realtime streams
 # ----------------------------------------------------
 # Run supabase/migrations/20260722180000_notifications.sql in SQL Editor.

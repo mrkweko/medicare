@@ -29,3 +29,5 @@ enable_confirmations = false
 
 [functions.create-staff-account]
 verify_jwt = true
+[functions.create-walk-in-patient]
+verify_jwt = true

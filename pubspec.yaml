@@ -31,12 +31,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Firebase — remaining Cloud Functions callables only (walk-in / referral)
-  # until Step 9. Firestore client SDK removed after Step 8.
-  firebase_core: ^4.12.1
-  cloud_functions: ^6.3.5
-
-  # Supabase (auth + data)
+  # Supabase (auth + data + edge functions)
   supabase_flutter: ^2.12.0
 
   # State management
