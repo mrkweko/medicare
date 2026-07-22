@@ -24,7 +24,7 @@ enum AppRole {
     }
   }
 
-  String toFirestoreString() {
+  String toDbString() {
     switch (this) {
       case AppRole.superAdmin:
         return 'super_admin';
@@ -38,11 +38,14 @@ enum AppRole {
         return 'patient';
     }
   }
+
+  /// Legacy Firestore serializer — kept until remaining Firebase repos migrate.
+  String toFirestoreString() => toDbString();
 }
 
 class UserModel {
   final String uid;
-  final String? email; // null for walk-in patients created without one (createWalkInPatient)
+  final String? email; // null for walk-in patients created without one
   final String? displayName;
   final String? phoneNumber;
   final AppRole role;
@@ -59,6 +62,33 @@ class UserModel {
     this.createdAt,
   });
 
+  factory UserModel.fromSupabase(Map<String, dynamic> data) {
+    return UserModel(
+      uid: data['id'] as String,
+      email: data['email'] as String?,
+      displayName: data['display_name'] as String?,
+      phoneNumber: data['phone_number'] as String?,
+      role: AppRole.fromString(data['role'] as String),
+      hospitalId: data['hospital_id'] as String?,
+      createdAt: data['created_at'] != null
+          ? DateTime.tryParse(data['created_at'] as String)
+          : null,
+    );
+  }
+
+  /// Insert payload for `public.profiles` (snake_case columns).
+  Map<String, dynamic> toProfileInsert() {
+    return {
+      'id': uid,
+      'email': email,
+      'display_name': displayName,
+      'phone_number': phoneNumber,
+      'role': role.toDbString(),
+      'hospital_id': hospitalId,
+    };
+  }
+
+  /// Legacy Firestore parser — kept until SuperAdminRepository migrates.
   factory UserModel.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data();
     if (data == null) {
@@ -75,6 +105,7 @@ class UserModel {
     );
   }
 
+  /// Legacy Firestore writer — kept until remaining Firebase repos migrate.
   Map<String, dynamic> toMap() {
     return {
       'uid': uid,

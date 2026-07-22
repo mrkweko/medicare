@@ -1,31 +1,22 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/user_model.dart';
 import '../../repositories/auth_repository.dart';
-import '../../repositories/fcm_repository.dart';
+import '../../core/supabase/supabase_init.dart';
 
-import 'dart:async';
-
-final firebaseAuthProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
-final firestoreProvider = Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
+final supabaseClientProvider = Provider<SupabaseClient>((ref) => supabase);
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return AuthRepository(
-    firebaseAuth: ref.watch(firebaseAuthProvider),
-    firestore: ref.watch(firestoreProvider),
-  );
+  return AuthRepository(client: ref.watch(supabaseClientProvider));
 });
-
-final fcmRepositoryProvider = Provider<FcmRepository>((ref) => FcmRepository());
 
 final authStateChangesProvider = StreamProvider<User?>((ref) {
   return ref.watch(authRepositoryProvider).authStateChanges();
 });
 
 final currentUserProfileProvider = StreamProvider<UserModel?>((ref) {
-  final uid = ref.watch(authStateChangesProvider).value?.uid;
+  final uid = ref.watch(authStateChangesProvider).value?.id;
   if (uid == null) return Stream.value(null);
   return ref.watch(authRepositoryProvider).watchUserProfile(uid);
 });
@@ -37,10 +28,7 @@ class AuthFormController extends AsyncNotifier<void> {
   Future<bool> signIn({required String email, required String password}) async {
     state = const AsyncLoading();
     try {
-      final user = await ref.read(authRepositoryProvider).signIn(email: email, password: password);
-      // Fire-and-forget — permission dialog/token fetch shouldn't block
-      // sign-in from completing, and a denial here isn't a sign-in failure.
-      unawaited(ref.read(fcmRepositoryProvider).requestPermissionAndRegister(user.uid));
+      await ref.read(authRepositoryProvider).signIn(email: email, password: password);
       state = const AsyncData(null);
       return true;
     } catch (e, st) {
@@ -57,10 +45,12 @@ class AuthFormController extends AsyncNotifier<void> {
   }) async {
     state = const AsyncLoading();
     try {
-      final user = await ref
-          .read(authRepositoryProvider)
-          .signUp(email: email, password: password, displayName: displayName, phoneNumber: phoneNumber);
-      unawaited(ref.read(fcmRepositoryProvider).requestPermissionAndRegister(user.uid));
+      await ref.read(authRepositoryProvider).signUp(
+            email: email,
+            password: password,
+            displayName: displayName,
+            phoneNumber: phoneNumber,
+          );
       state = const AsyncData(null);
       return true;
     } catch (e, st) {

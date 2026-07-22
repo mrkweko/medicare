@@ -70,14 +70,14 @@ final routerProvider = Provider<GoRouter>((ref) {
     refreshListenable: Listenable.merge([refreshNotifier, splashGate]),
     redirect: (context, state) {
       final path = state.matchedLocation;
-      debugPrint('[router] redirect check for $path, currentUser=${ref.read(authStateChangesProvider).value?.uid}');
+      debugPrint('[router] redirect check for $path, currentUser=${ref.read(authStateChangesProvider).value?.id}');
       final isAuthRoute = path == '/login' || path == '/signup';
       final isSplash = path == '/splash';
 
       // Hold on splash until the minimum duration has elapsed, no matter
       // how fast auth/profile resolve. This must be checked before any
-      // auth/profile logic below, since cached Firebase auth state can
-      // resolve before the splash screen paints a single frame.
+      // auth/profile logic below, since a cached session can resolve
+      // before the splash screen paints a single frame.
       if (!splashGate.elapsed) {
         return isSplash ? null : '/splash';
       }
@@ -89,12 +89,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         return isSplash ? null : '/splash';
       }
 
-      final firebaseUser = authAsync.value;
-      if (firebaseUser == null) {
+      final authUser = authAsync.value;
+      if (authUser == null) {
         return isAuthRoute ? null : '/login';
       }
 
-      // Signed in — now resolve their role/hospitalId from Firestore.
+      // Signed in — resolve role/hospitalId from Supabase profiles.
       final profileAsync = ref.read(currentUserProfileProvider);
       if (profileAsync.isLoading) {
         return isSplash ? null : '/splash';
@@ -102,9 +102,8 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       final profile = profileAsync.value;
       if (profile == null) {
-        // Auth account exists but users/{uid} doc doesn't — an orphaned
-        // account (see the earlier permission-denied bug) or the profile
-        // was deleted. Can't route by role with nothing to route by.
+        // Auth account exists but profiles row doesn't — orphaned account
+        // or profile was deleted. Can't route by role with nothing to use.
         return '/login';
       }
 
@@ -114,8 +113,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (isAuthRoute || isSplash) return homePath;
 
       // Signed in but sitting on a path outside their role's area — e.g.
-      // typed a URL directly, or their role changed mid-session via a
-      // manual Firestore edit and refreshListenable just fired.
+      // typed a URL directly, or their role changed mid-session and
+      // refreshListenable just fired.
       if (!path.startsWith(basePath)) return homePath;
 
       return null;

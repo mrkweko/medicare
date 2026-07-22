@@ -3,7 +3,6 @@
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
 ///
@@ -51,13 +50,15 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'AIzaSyDi1fCOTjokDsZl9TRgOaQZ4_SEbx0_Hto',
     appId: '1:1007436853330:android:2a7dce2df30078039aaf8b',
     messagingSenderId: '1007436853330',
     projectId: 'hospital-queue-app-86bee',
     storageBucket: 'hospital-queue-app-86bee.firebasestorage.app',
   );
 
-  static FirebaseOptions ios = FirebaseOptions(
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'AIzaSyDi1fCOTjokDsZl9TRgOaQZ4_SEbx0_Hto',
     appId: '1:1007436853330:ios:1ec5065c562041789aaf8b',
     messagingSenderId: '1007436853330',
     projectId: 'hospital-queue-app-86bee',
