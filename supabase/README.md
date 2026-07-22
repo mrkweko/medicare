@@ -28,6 +28,11 @@
 #      NULL
 #    );
 #
+# Step 6 — queue_entries + core queue RPCs
+# ----------------------------------------
+# Run supabase/migrations/20260722170000_queue_entries.sql in SQL Editor.
+# Includes Realtime on queue_entries (streams wired in the Flutter repo).
+
 # Step 5 — appointments schema + RPCs
 # ------------------------------------
 # Run supabase/migrations/20260722160000_appointments.sql in SQL Editor.
