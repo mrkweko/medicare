@@ -11,6 +11,9 @@ class QueueRepository {
 
   static const _activeStatuses = ['waiting', 'called', 'in_consultation'];
 
+  /// Patient's own visit may also be paused mid-consultation.
+  static const _myVisitStatuses = ['waiting', 'called', 'in_consultation', 'paused'];
+
   /// Transactional check-in: inserts queue_entries + sets appointment checked_in.
   /// FIX (vs Firebase): no longer a non-atomic dual-write across two stores.
   Future<String> checkIn({
@@ -288,7 +291,7 @@ class QueueRepository {
             r['department_id'] == departmentId &&
             _dateMatches(r['date'], date) &&
             r['patient_id'] == patientId &&
-            _activeStatuses.contains(r['status']),
+            _myVisitStatuses.contains(r['status']),
       );
       if (match.isEmpty) return null;
       return QueueEntryModel.fromSupabase(match.first);

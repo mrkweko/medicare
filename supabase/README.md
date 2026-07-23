@@ -46,6 +46,11 @@
 # if ending a consultation fails with "not allowed to update doctors".
 # Also adds slot capacity to get_available_slots and rejects past slots on book.
 #
+# Pause / resume patient notifications
+# ------------------------------------
+# Run supabase/migrations/20260723120000_pause_resume_notifications.sql
+# so patients get notified (and live queue UI updates) when a session is paused.
+#
 # Step 8 — notifications + remaining Realtime streams
 # ----------------------------------------------------
 # Run supabase/migrations/20260722180000_notifications.sql in SQL Editor.

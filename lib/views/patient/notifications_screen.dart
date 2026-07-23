@@ -16,6 +16,12 @@ IconData _iconForType(String type) {
       return Icons.campaign_outlined;
     case 'completed':
       return Icons.check_circle_outline;
+    case 'paused':
+      return Icons.pause_circle_outline;
+    case 'resumed':
+      return Icons.play_circle_outline;
+    case 'skipped':
+      return Icons.skip_next_outlined;
     case 'priority_bump':
       return Icons.priority_high;
     default:

@@ -79,11 +79,36 @@ class LiveQueueTrackingScreen extends ConsumerWidget {
                 }
 
                 final entry = statusSnap.data;
-                if (entry == null) return const Center(child: CircularProgressIndicator());
+                if (statusSnap.connectionState == ConnectionState.waiting && !statusSnap.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (entry == null) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.hourglass_empty, size: 56, color: AppColors.textSecondary.withValues(alpha: 0.5)),
+                          const SizedBox(height: 12),
+                          Text('No active queue entry', style: Theme.of(context).textTheme.titleMedium),
+                          const SizedBox(height: 4),
+                          const Text('Your live status will appear once you are in the queue'),
+                        ],
+                      ),
+                    ),
+                  );
+                }
 
                 final position = entry.patientsAhead ?? 0;
                 final isNext = position == 0 && entry.status == 'waiting';
                 final beingSeen = entry.status == 'called' || entry.status == 'in_consultation';
+                final isPaused = entry.status == 'paused';
+                final headerColor = isPaused
+                    ? AppColors.urgent
+                    : beingSeen
+                        ? AppColors.secondary
+                        : AppColors.primary;
 
                 return ListView(
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
@@ -91,7 +116,7 @@ class LiveQueueTrackingScreen extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: beingSeen ? AppColors.secondary : AppColors.primary,
+                        color: headerColor,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Column(
@@ -99,9 +124,12 @@ class LiveQueueTrackingScreen extends ConsumerWidget {
                         children: [
                           Row(
                             children: [
-                              const Text('Your Token', style: TextStyle(color: Colors.white70)),
+                              Text(
+                                isPaused ? 'Status' : 'Your Token',
+                                style: const TextStyle(color: Colors.white70),
+                              ),
                               const Spacer(),
-                              if (!beingSeen) const Text('Position', style: TextStyle(color: Colors.white70)),
+                              if (!beingSeen && !isPaused) const Text('Position', style: TextStyle(color: Colors.white70)),
                             ],
                           ),
                           const SizedBox(height: 6),
@@ -110,10 +138,15 @@ class LiveQueueTrackingScreen extends ConsumerWidget {
                             children: [
                               Text('#${entry.tokenNumber}', style: const TextStyle(color: Colors.white, fontSize: 44, fontWeight: FontWeight.w800)),
                               const Spacer(),
-                              if (!beingSeen)
+                              if (!beingSeen && !isPaused)
                                 Text(
                                   isNext ? 'Next' : _ordinal(position + 1),
                                   style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w800),
+                                ),
+                              if (isPaused)
+                                const Text(
+                                  'Paused',
+                                  style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800),
                                 ),
                             ],
                           ),
@@ -126,17 +159,26 @@ class LiveQueueTrackingScreen extends ConsumerWidget {
                       decoration: BoxDecoration(color: AppColors.surfaceVariant, borderRadius: BorderRadius.circular(14)),
                       child: Row(
                         children: [
-                          Icon(beingSeen ? Icons.meeting_room_outlined : Icons.groups_outlined, color: AppColors.textSecondary),
+                          Icon(
+                            isPaused
+                                ? Icons.pause_circle_outline
+                                : beingSeen
+                                    ? Icons.meeting_room_outlined
+                                    : Icons.groups_outlined,
+                            color: AppColors.textSecondary,
+                          ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              beingSeen
-                                  ? "You're being seen now"
-                                  : isNext
-                                  ? "You're next!"
-                                  : entry.patientsAhead == null
-                                  ? 'Checked in — position updating...'
-                                  : '$position patient${position == 1 ? '' : 's'} ahead of you',
+                              isPaused
+                                  ? 'Consultation paused — please stay nearby. The doctor will resume shortly.'
+                                  : beingSeen
+                                      ? "You're being seen now"
+                                      : isNext
+                                          ? "You're next!"
+                                          : entry.patientsAhead == null
+                                              ? 'Checked in — position updating...'
+                                              : '$position patient${position == 1 ? '' : 's'} ahead of you',
                               style: const TextStyle(fontWeight: FontWeight.w600),
                             ),
                           ),

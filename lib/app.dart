@@ -28,6 +28,7 @@ import 'models/appointment_model.dart';
 import 'models/user_model.dart';
 import 'router/router_refresh_notifier.dart';
 import 'router/splash_gate.dart'; // adjust path to wherever you placed splash_gate.dart
+import 'services/push_notification_service.dart';
 import 'viewmodels/auth/auth_viewmodel.dart';
 import 'views/admin/hospital_admin_home_screen.dart';
 import 'views/auth/login_screen.dart';
@@ -175,8 +176,22 @@ class HospitalQueueApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
 
+    // System tray push for every signed-in role (patient, staff, admins).
+    ref.listen(authStateChangesProvider, (prev, next) {
+      final user = next.value;
+      if (user != null) {
+        PushNotificationService.instance.startForUser(user.id);
+      } else {
+        PushNotificationService.instance.stop();
+      }
+    });
+    final existingUser = ref.read(authStateChangesProvider).value;
+    if (existingUser != null) {
+      PushNotificationService.instance.startForUser(existingUser.id);
+    }
+
     return MaterialApp.router(
-      title: 'Hospital Queue',
+      title: 'Medicare',
       debugShowCheckedModeBanner: false,
       theme: appTheme,
       routerConfig: router,

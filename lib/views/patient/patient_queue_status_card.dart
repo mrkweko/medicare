@@ -57,9 +57,14 @@ class PatientQueueStatusCard extends ConsumerWidget {
             final position = entry.patientsAhead ?? 0;
             final isNext = position == 0 && entry.status == 'waiting';
             final beingSeen = entry.status == 'called' || entry.status == 'in_consultation';
+            final isPaused = entry.status == 'paused';
 
             return Card(
-              color: beingSeen ? AppColors.secondary : AppColors.primary,
+              color: isPaused
+                  ? AppColors.urgent
+                  : beingSeen
+                      ? AppColors.secondary
+                      : AppColors.primary,
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: Row(
@@ -81,18 +86,22 @@ class PatientQueueStatusCard extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            beingSeen
-                                ? "You're being seen now"
-                                : isNext
-                                ? "You're next!"
-                                : entry.patientsAhead == null
-                                ? 'Checked in — position updating...'
-                                : '$position patient${position == 1 ? '' : 's'} ahead of you',
+                            isPaused
+                                ? 'Consultation paused'
+                                : beingSeen
+                                    ? "You're being seen now"
+                                    : isNext
+                                        ? "You're next!"
+                                        : entry.patientsAhead == null
+                                            ? 'Checked in — position updating...'
+                                            : '$position patient${position == 1 ? '' : 's'} ahead of you',
                             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'In the live queue · ${entry.priority == 'normal' ? 'Standard' : entry.priority.toUpperCase()}',
+                            isPaused
+                                ? 'Please stay nearby — the doctor will resume shortly'
+                                : 'In the live queue · ${entry.priority == 'normal' ? 'Standard' : entry.priority.toUpperCase()}',
                             style: TextStyle(color: Colors.white.withValues(alpha: 0.85)),
                           ),
                         ],

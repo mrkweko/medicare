@@ -263,6 +263,30 @@ BEGIN
     );
   END IF;
 
+  IF NEW.status = 'paused' AND (v_is_create OR OLD.status IS DISTINCT FROM 'paused') THEN
+    PERFORM public.dispatch_notification(
+      NEW.patient_id,
+      'paused',
+      'Your consultation is paused. Please stay nearby — the doctor will resume shortly.',
+      NEW.hospital_id,
+      NEW.appointment_id,
+      NEW.id
+    );
+  END IF;
+
+  IF NEW.status = 'in_consultation'
+    AND NOT v_is_create
+    AND OLD.status = 'paused' THEN
+    PERFORM public.dispatch_notification(
+      NEW.patient_id,
+      'resumed',
+      'Your consultation has resumed. Please return to the consultation room.',
+      NEW.hospital_id,
+      NEW.appointment_id,
+      NEW.id
+    );
+  END IF;
+
   IF NEW.status = 'completed' AND (v_is_create OR OLD.status IS DISTINCT FROM 'completed') THEN
     PERFORM public.dispatch_notification(
       NEW.patient_id,
