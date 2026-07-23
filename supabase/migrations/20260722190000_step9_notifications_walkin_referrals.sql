@@ -139,6 +139,8 @@ BEGIN
     RETURN NEW;
   END IF;
 
+  PERFORM set_config('app.bypass_doctor_enforce', 'true', true);
+
   v_raw_ms := EXTRACT(EPOCH FROM (NEW.consultation_completed_at - NEW.consultation_started_at)) * 1000
     - COALESCE(NEW.total_paused_ms, 0);
   v_duration_min := v_raw_ms / 60000.0;

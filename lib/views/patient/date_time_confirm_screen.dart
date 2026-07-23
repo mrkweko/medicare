@@ -29,6 +29,35 @@ class _DateTimeConfirmScreenState extends ConsumerState<DateTimeConfirmScreen> {
   String? _selectedSlot;
   bool _confirming = false;
 
+  /// Slot start has already begun (or passed) for the selected calendar day.
+  bool _isSlotPast(String slot) {
+    final startPart = slot.split('-').first.trim();
+    final parts = startPart.split(':');
+    if (parts.length < 2) return false;
+    final hour = int.tryParse(parts[0]);
+    final minute = int.tryParse(parts[1]);
+    if (hour == null || minute == null) return false;
+    final slotStart = DateTime(_date.year, _date.month, _date.day, hour, minute);
+    return !slotStart.isAfter(DateTime.now());
+  }
+
+  /// Green = quiet, orange = filling up, red = crowded / full.
+  Color _crowdColor({required int remaining, required int capacity}) {
+    if (capacity <= 0 || remaining <= 0) return AppColors.critical;
+    final fill = 1.0 - (remaining / capacity);
+    if (fill >= 0.7) return AppColors.critical;
+    if (fill >= 0.4) return AppColors.urgent;
+    return AppColors.secondary;
+  }
+
+  String _crowdLabel({required int remaining, required int capacity}) {
+    if (capacity <= 0 || remaining <= 0) return 'Full';
+    final fill = 1.0 - (remaining / capacity);
+    if (fill >= 0.7) return 'Busy';
+    if (fill >= 0.4) return 'Moderate';
+    return 'Quiet';
+  }
+
   @override
   Widget build(BuildContext context) {
     final bookingState = ref.watch(bookingControllerProvider);
@@ -98,8 +127,11 @@ class _DateTimeConfirmScreenState extends ConsumerState<DateTimeConfirmScreen> {
             ),
             const SizedBox(height: 20),
             Text('Select Time Slot', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 10),
-            FutureBuilder<List<({String slot, int remaining})>>(
+            const SizedBox(height: 8),
+            const _CrowdLegend(),
+            const SizedBox(height: 12),
+            FutureBuilder<List<({String slot, int remaining, int capacity})>>(
+              key: ValueKey(dateStr),
               future: ref.read(appointmentRepositoryProvider).getAvailableSlots(
                 hospitalId: widget.hospitalId,
                 departmentId: widget.departmentId,
@@ -114,14 +146,36 @@ class _DateTimeConfirmScreenState extends ConsumerState<DateTimeConfirmScreen> {
                   spacing: 8,
                   runSpacing: 8,
                   children: slots.map((s) {
+                    final past = _isSlotPast(s.slot);
                     final full = s.remaining <= 0;
+                    final disabled = past || full;
                     final selected = _selectedSlot == s.slot;
+                    final crowd = _crowdColor(remaining: s.remaining, capacity: s.capacity);
+                    final label = past
+                        ? '${s.slot} · Past'
+                        : full
+                            ? '${s.slot} · Full'
+                            : '${s.slot} · ${_crowdLabel(remaining: s.remaining, capacity: s.capacity)}';
+
                     return ChoiceChip(
-                      label: Text(full ? '${s.slot} · Full' : s.slot),
+                      label: Text(label),
                       selected: selected,
-                      onSelected: full ? null : (_) => setState(() => _selectedSlot = s.slot),
-                      disabledColor: AppColors.surfaceVariant.withValues(alpha: 0.5),
-                      labelStyle: TextStyle(color: full ? AppColors.textSecondary.withValues(alpha: 0.5) : null),
+                      onSelected: disabled ? null : (_) => setState(() => _selectedSlot = s.slot),
+                      selectedColor: crowd.withValues(alpha: 0.25),
+                      backgroundColor: disabled
+                          ? AppColors.surfaceVariant.withValues(alpha: 0.45)
+                          : crowd.withValues(alpha: 0.12),
+                      disabledColor: AppColors.surfaceVariant.withValues(alpha: 0.4),
+                      side: BorderSide(
+                        color: disabled ? AppColors.textSecondary.withValues(alpha: 0.25) : crowd.withValues(alpha: 0.7),
+                      ),
+                      labelStyle: TextStyle(
+                        color: disabled
+                            ? AppColors.textSecondary.withValues(alpha: 0.45)
+                            : (selected ? crowd : AppColors.textPrimary),
+                        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                        fontSize: 12,
+                      ),
                     );
                   }).toList(),
                 );
@@ -204,6 +258,46 @@ class _DateTimeConfirmScreenState extends ConsumerState<DateTimeConfirmScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _CrowdLegend extends StatelessWidget {
+  const _CrowdLegend();
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 12,
+      runSpacing: 6,
+      children: const [
+        _LegendDot(color: AppColors.secondary, label: 'Quiet'),
+        _LegendDot(color: AppColors.urgent, label: 'Moderate'),
+        _LegendDot(color: AppColors.critical, label: 'Busy / Full'),
+        _LegendDot(color: AppColors.textSecondary, label: 'Past (unavailable)'),
+      ],
+    );
+  }
+}
+
+class _LegendDot extends StatelessWidget {
+  const _LegendDot({required this.color, required this.label});
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        Text(label, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+      ],
     );
   }
 }

@@ -172,7 +172,7 @@ class _AppointmentRow extends StatelessWidget {
           backgroundColor: color.withValues(alpha: 0.15),
           child: Text('#${appointment.tokenNumber}', style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12)),
         ),
-        title: Text(appointment.patientName, style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text('Token #${appointment.tokenNumber}', style: const TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text(
           isPatientSection
               ? '${appointment.scheduledDate} · ${appointment.status}'

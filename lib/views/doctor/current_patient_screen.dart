@@ -41,7 +41,7 @@ class _PausedPatientTile extends ConsumerWidget {
           backgroundColor: Colors.white,
           child: Text('#${entry.tokenNumber}', style: const TextStyle(fontWeight: FontWeight.w700)),
         ),
-        title: Text(entry.patientName),
+        title: Text('Token #${entry.tokenNumber}'),
         subtitle: const Text('Paused mid-consultation'),
         trailing: FilledButton(
           onPressed: () => ref.read(queueRepositoryProvider).resumeConsultation(
@@ -98,13 +98,20 @@ class _CurrentPatientScreenState extends ConsumerState<CurrentPatientScreen> {
   }
 
   Future<void> _handleComplete(QueueEntryModel entry, String today) async {
-    await ref.read(queueRepositoryProvider).updateStatus(
-      hospitalId: widget.hospitalId,
-      date: today,
-      departmentId: widget.doctor.departmentId,
-      entryId: entry.id,
-      status: 'completed',
-    );
+    try {
+      await ref.read(queueRepositoryProvider).updateStatus(
+        hospitalId: widget.hospitalId,
+        date: today,
+        departmentId: widget.doctor.departmentId,
+        entryId: entry.id,
+        status: 'completed',
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not end session: $e')));
+      }
+      return;
+    }
     if (!mounted) return;
 
     final action = await showDialog<String>(
@@ -413,16 +420,15 @@ class _CurrentPatientScreenState extends ConsumerState<CurrentPatientScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(activeEntry.patientName, style: Theme.of(context).textTheme.titleLarge),
+                                Text(
+                                  'Token #${activeEntry.tokenNumber}',
+                                  style: Theme.of(context).textTheme.titleLarge,
+                                ),
                                 const SizedBox(height: 6),
-                                if (activeEntry.patientPhoneNumber != null)
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.phone_outlined, size: 16, color: AppColors.textSecondary),
-                                      const SizedBox(width: 6),
-                                      Text(activeEntry.patientPhoneNumber!, style: Theme.of(context).textTheme.bodyMedium),
-                                    ],
-                                  ),
+                                Text(
+                                  'Patient identity is hidden for privacy',
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
                               ],
                             ),
                           ),

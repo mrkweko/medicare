@@ -40,6 +40,12 @@
 # Run supabase/migrations/20260723100000_fix_receptionist_checkin_queue_enforce.sql
 # if check-in fails with "receptionist may only escalate priority or rejoin".
 #
+# Fix — doctor complete + booking slots
+# -------------------------------------
+# Run supabase/migrations/20260723110000_fix_doctor_complete_and_slots.sql
+# if ending a consultation fails with "not allowed to update doctors".
+# Also adds slot capacity to get_available_slots and rejects past slots on book.
+#
 # Step 8 — notifications + remaining Realtime streams
 # ----------------------------------------------------
 # Run supabase/migrations/20260722180000_notifications.sql in SQL Editor.

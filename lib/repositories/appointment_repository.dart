@@ -53,7 +53,7 @@ class AppointmentRepository {
     }
   }
 
-  Future<List<({String slot, int remaining})>> getAvailableSlots({
+  Future<List<({String slot, int remaining, int capacity})>> getAvailableSlots({
     required String hospitalId,
     required String departmentId,
     required String date,
@@ -74,6 +74,7 @@ class AppointmentRepository {
             (s) => (
               slot: s['slot'] as String,
               remaining: (s['remaining'] as num).toInt(),
+              capacity: (s['capacity'] as num?)?.toInt() ?? 5,
             ),
           )
           .toList();

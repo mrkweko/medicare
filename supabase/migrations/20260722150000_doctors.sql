@@ -60,6 +60,11 @@ AS $$
 DECLARE
   caller_role app_role;
 BEGIN
+  -- Trusted server-side updates (rolling avg on consultation complete).
+  IF COALESCE(current_setting('app.bypass_doctor_enforce', true), '') = 'true' THEN
+    RETURN NEW;
+  END IF;
+
   IF auth.uid() IS NULL THEN
     RETURN NEW;
   END IF;

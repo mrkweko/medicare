@@ -58,7 +58,7 @@ class LiveQueueBody extends ConsumerWidget {
                       backgroundColor: color.withValues(alpha: 0.15),
                       child: Text('#${e.tokenNumber}', style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12)),
                     ),
-                    title: Text(e.patientName),
+                    title: Text('Token #${e.tokenNumber}'),
                     subtitle: Text('${e.status}${isMine ? ' · assigned to you' : ''} · ${e.priority}'),
                   ),
                 );
