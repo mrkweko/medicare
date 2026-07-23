@@ -35,6 +35,11 @@
 #      npx supabase functions deploy create-walk-in-patient
 #    (also keep create-staff-account deployed from Step 4)
 #
+# Fix — receptionist check-in (after Step 9)
+# ----------------------------------------
+# Run supabase/migrations/20260723100000_fix_receptionist_checkin_queue_enforce.sql
+# if check-in fails with "receptionist may only escalate priority or rejoin".
+#
 # Step 8 — notifications + remaining Realtime streams
 # ----------------------------------------------------
 # Run supabase/migrations/20260722180000_notifications.sql in SQL Editor.

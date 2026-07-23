@@ -105,6 +105,12 @@ AS $$
 DECLARE
   caller_role app_role;
 BEGIN
+  -- Trusted server-side updates (resequence / notification trigger, RPCs).
+  -- See 20260723100000_fix_receptionist_checkin_queue_enforce.sql.
+  IF COALESCE(current_setting('app.bypass_queue_enforce', true), '') = 'true' THEN
+    RETURN NEW;
+  END IF;
+
   IF auth.uid() IS NULL THEN
     RETURN NEW;
   END IF;

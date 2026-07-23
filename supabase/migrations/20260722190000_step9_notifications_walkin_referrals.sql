@@ -232,6 +232,10 @@ DECLARE
   v_new_threshold notification_threshold;
   v_bumped RECORD;
 BEGIN
+  -- Allow this trigger's resequence UPDATEs past enforce_queue_entry_client_updates
+  -- while the signed-in caller is a receptionist (JWT still present).
+  PERFORM set_config('app.bypass_queue_enforce', 'true', true);
+
   -- Skip re-entrancy from resequence-only updates.
   IF TG_OP = 'UPDATE'
     AND NEW.status IS NOT DISTINCT FROM OLD.status
